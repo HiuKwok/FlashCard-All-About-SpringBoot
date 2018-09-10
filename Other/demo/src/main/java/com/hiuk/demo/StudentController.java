@@ -2,6 +2,9 @@ package com.hiuk.demo;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,8 +28,12 @@ public class StudentController {
     }
 
     @PostMapping(epWithName)
-    public void addStudent (@PathVariable String name) {
-        studentRepo.save(new Student(name));
+    public ResponseEntity<?> addStudent (@PathVariable String name) {
+        Student student = studentRepo.save(new Student(name));
+
+        HttpHeaders headers = new HttpHeaders();
+        return new ResponseEntity(headers, HttpStatus.CREATED);
+
     }
 
 }
