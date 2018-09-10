@@ -26,4 +26,13 @@ public class Student {
     public String getEmail() {
         return email;
     }
+
+    public Student() {
+    }
+
+    public Student(String name) {
+        this.name = name;
+        this.pw = "abc123";
+        this.email = "I am email";
+    }
 }
