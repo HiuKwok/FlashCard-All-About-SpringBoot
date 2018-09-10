@@ -1,0 +1,5 @@
+logging:
+  level:
+    io:
+      netty: INFO
+    reactor: INFO
