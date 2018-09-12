@@ -48,6 +48,9 @@ public class ImageService {
 //	Connection to DB
 //	As Image repo inherit all method from base repo, it would work like charm 
 	private final ImageRepository imageRepository;
+	
+//	As you may notice, meterRegeistry is available on global scope
+//	private final MeterRegistry  meterRegistry;
 
 	public ImageService(ResourceLoader resourceLoader,
 						ImageRepository imageRepository) {

@@ -1,4 +1,7 @@
 buildscript {
+
+    id "com.gorylenko.gradle-git-properties" version "1.4.17" 
+
 	ext {
 		springBootVersion = '2.0.0.M5'
 	}
@@ -33,14 +36,33 @@ repositories {
 
 
 dependencies {
+/**
+ Auto update when code update
+  - Disable cache settings for autoconfigured componenets 
+  - When it detects a change in code, it restarts the application, holding onto third-party classes
+  and simply throwing away and reloading custom classes. 
+  - Activates an embedded LiveReload server that can trigger the browser to refresh the page automatically. 
+  
+  - When we make a change t our code and eitehr issue a Save or a Make Project, 
+  DevTools will throw away the loader holding our custom code and launch a new application context. This makes for a relatively
+  speedy restart. 
+  
+  The problem os this approache is more on DB side, as all stuff gonna be reload - data on embedded DB may be affected.  
+  
+*/
+ 	compile("org.springframework.boot:spring-boot-devtools") 
 	compile('org.springframework.boot:spring-boot-starter-webflux')
 	compile('org.synchronoss.cloud:nio-multipart-parser')
-	// tag::dep-1[]
 	compile('org.springframework.boot:spring-boot-starter-data-mongodb-reactive')
-	// end::dep-1[]
 	compile("org.springframework.boot:spring-boot-starter-thymeleaf")
 	compile('org.projectlombok:lombok')
+	compile('de.flapdoodle.embed:de.flapdoodle.embed.mongo')
+		
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 	testCompile("io.projectreactor:reactor-test")
-	compile('de.flapdoodle.embed:de.flapdoodle.embed.mongo')
+	// Add mongo support on tes tscope
+	testCompile("de.flapdoodle.embed:de.flapdoodle.embed.mongo") 
+	// Rx way
+	testCompile("io.projectreactor:reactor-test") 
+
 }

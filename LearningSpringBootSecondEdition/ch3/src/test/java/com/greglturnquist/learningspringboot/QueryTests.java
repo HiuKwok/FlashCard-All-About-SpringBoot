@@ -42,9 +42,18 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 /**
  * @author Greg Turnquist
+ * @author Hiu Kwok (Comment block)
  */
+//
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = QueryTests.TestConfig.class)
+/**
+ *  Disable general Spring Boot auto-configuration
+ * 	Then enable Spring Boot's test-based auto-config.
+ * Stuff include:
+ * 	 - MongoTemplate || Mongo connection || ReactiveMOngoTemplate || Embedded instance 
+ *     MongoDB repo
+ */
 @DataMongoTest
 public class QueryTests {
 

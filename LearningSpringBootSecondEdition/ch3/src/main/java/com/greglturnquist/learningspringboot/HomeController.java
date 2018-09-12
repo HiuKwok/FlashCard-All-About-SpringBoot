@@ -51,6 +51,8 @@ public class HomeController {
 	@GetMapping("/")
 	public Mono<String> index(Model model) {
 		model.addAttribute("images", imageService.findAllImages());
+//		New added
+		model.addAttribute("images", imageService.findAllImages());
 		return Mono.just("index");
 	}
 
