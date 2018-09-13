@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.greglturnquist.learningspringboot;
+package com.greglturnquist.learningspringboot.images;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -22,9 +22,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.UUID;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.Resource;
@@ -42,58 +42,47 @@ public class ImageService {
 
 	private static String UPLOAD_ROOT = "upload-dir";
 
-	// tag::injection[]
 	private final ResourceLoader resourceLoader;
-
-//	Connection to DB
-//	As Image repo inherit all method from base repo, it would work like charm 
 	private final ImageRepository imageRepository;
-	
-//	As you may notice, meterRegeistry is available on global scope
-//	Populated via contrsuctor injection. 
-//	private final MeterRegistry  meterRegistry;
+
+	// tag::metric-1[]
+	private final MeterRegistry meterRegistry;
 
 	public ImageService(ResourceLoader resourceLoader,
-						ImageRepository imageRepository) {
+						ImageRepository imageRepository,
+						MeterRegistry meterRegistry) {
+
 		this.resourceLoader = resourceLoader;
 		this.imageRepository = imageRepository;
+		this.meterRegistry = meterRegistry;
 	}
-	// end::injection[]
+// end::metric-1[]
 
-/**
- * It really depend what implementation used ( MVC vs. Rx).
- * And the Repo would return appropriate type. 
- * @return
- */
 	public Flux<Image> findAllImages() {
-//		All log call is transparent. 
-//		log( ) is powerful enough to print the whole pipeline.
 		return imageRepository.findAll()
-				.log("finadAll");
+			.log("findAll");
 	}
 
 
 	public Mono<Resource> findOneImage(String filename) {
 		return Mono.fromSupplier(() ->
 			resourceLoader.getResource(
-				"file:" + UPLOAD_ROOT + "/" + filename));
+				"file:" + UPLOAD_ROOT + "/" + filename))
+			.log("findOneImage");
 	}
 
-	// tag::2[]
+	// tag::metric-2[]
 	public Mono<Void> createImage(Flux<FilePart> files) {
 		return files
+			.log("createImage-files")
 			.flatMap(file -> {
-//				Save images
 				Mono<Image> saveDatabaseImage = imageRepository.save(
 					new Image(
 						UUID.randomUUID().toString(),
-						file.filename()));
-				
-//				Copying the file to the server.
-//				Worker thread handle this? to let main thread keep answer reuqest. 
-				Mono<Void> copyFile = Mono.just(
-					Paths.get(UPLOAD_ROOT, file.filename())
-						.toFile())
+						file.filename()))
+					.log("createImage-save");
+
+				Mono<Void> copyFile = Mono.just(Paths.get(UPLOAD_ROOT, file.filename()).toFile())
 					.log("createImage-picktarget")
 					.map(destFile -> {
 						try {
@@ -105,44 +94,48 @@ public class ImageService {
 					})
 					.log("createImage-newfile")
 					.flatMap(file::transferTo)
-					.log("createImage-copy");
-				//Join when all done, in the mean while of waiting, Thread would work on other stuff instead. 
-				return Mono.when(saveDatabaseImage, copyFile);
-			})
-			.log("createImage-flatMap") 
-			.then()
-			.log("createImage-done"); 
-	}
-	// end::2[]
+					.log("createImage-copy")
+					.then(Mono.fromRunnable(() ->
+						meterRegistry
+							.summary("files.uploaded.bytes")
+							.record(Paths.get(UPLOAD_ROOT, file.filename()).toFile().length())
+					));
 
-	// tag::3[]
+				return Mono.when(saveDatabaseImage, copyFile)
+					.log("createImage-when");
+			})
+			.log("createImage-flatMap")
+			.then()
+			.log("createImage-done");
+	}
+	// end::metric-2[]
+
 	public Mono<Void> deleteImage(String filename) {
 		Mono<Void> deleteDatabaseImage = imageRepository
 			.findByName(filename)
-			.flatMap(imageRepository::delete);
+			.log("deleteImage-find")
+			.flatMap(imageRepository::delete)
+			.log("deleteImage-record");
 
 		Mono<Object> deleteFile = Mono.fromRunnable(() -> {
 			try {
-				Files.deleteIfExists(
-					Paths.get(UPLOAD_ROOT, filename));
+				Files.deleteIfExists(Paths.get(UPLOAD_ROOT, filename));
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
 		})
-		.log("deleteImage-file");
+			.log("deleteImage-file");
 
 		return Mono.when(deleteDatabaseImage, deleteFile)
 			.log("deleteImage-when")
 			.then()
 			.log("deleteImage-done");
 	}
-	// end::3[]
 
 	/**
-	 * Pre-load some test images
+	 * Pre-load some fake images
 	 *
-	 * @return Spring Boot {@link CommandLineRunner} automatically
-	 *         run after app context is loaded.
+	 * @return Spring Boot {@link CommandLineRunner} automatically run after app context is loaded.
 	 */
 	@Bean
 	CommandLineRunner setUp() throws IOException {
@@ -163,4 +156,5 @@ public class ImageService {
 				new FileWriter(UPLOAD_ROOT + "/bazinga.png"));
 		};
 	}
+
 }
