@@ -11,7 +11,7 @@ This repo is served as personal reference for myself thoughout the whole journey
  	 my best to rewrite it in my own way, however during the transaction period. Code with other's author may exist, it only exist when the certain license permit to do so. In this case all license info along with the author name would placed on the header for every Src. 
 
  - Book list:
- 	 - Learning Spring Boot 2.0 - Second Edition [Greg L. Turnquist]
+ 	 - Learning Spring Boot 2.0 - Second Edition [Greg L. Turnquist]  - [Git](https://github.com/PacktPublishing/Learning-Spring-Boot-2.0-Second-Edition)
  	 	- Things to be done:
  	 		 - Tranform book example into a proper Spring App (Config server eureka, microservies)
 
